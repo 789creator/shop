@@ -6,23 +6,23 @@
     <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()">
       <el-form-item>
         <el-col :span="10">
-          <el-form-item label="规格名称" prop="name" label-width="80px">
+          <el-form-item label="规格名称" prop="name" label-width="100px">
             <el-input v-model="dataForm.name" placeholder="规格名称"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="10">
-          <el-form-item label="排序" prop="order" label-width="80px">
+          <el-form-item label="排序" prop="order" label-width="100px">
             <el-input v-model="dataForm.order" placeholder="排序"></el-input>
           </el-form-item>
         </el-col>
       </el-form-item>
 
-      <el-form-item label-width="80px">
+      <el-form-item label-width="100px">
         <el-checkbox name="searchIndex"
                      v-model="dataForm.searchIndex">是否检索
         </el-checkbox>
       </el-form-item>
-      <el-form-item label="所属分类" label-width="80px">
+      <el-form-item label="所属分类" label-width="100px">
         <el-cascader
           :options="categoryList"
           :props="props"
@@ -31,42 +31,73 @@
         </el-cascader>
       </el-form-item>
       <el-form-item label="规格值类型" prop="specValType" label-width="100px">
-        <!--<el-input v-model="dataForm.specValType" placeholder="规格值类型"></el-input>-->
+        <el-select v-model="dataForm.specValType">
+          <el-option
+            v-for="item in specValTypes"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+            <span style="float: left">{{ item.label }}</span>
+          </el-option>
+        </el-select>
       </el-form-item>
-      <el-form-item label="规格值内容" prop="specVal">
-        <el-input v-model="dataForm.specVal" placeholder="规格值内容"></el-input>
+      <el-form-item label="内容" prop="specVal" label-width="100px" v-show="dataForm.specValType==2">
+        <el-col :span="12">
+          <el-input
+            type="textarea"
+            size="small"
+            :autosize="{ minRows: 4 }"
+            placeholder="请输入内容"
+            v-model="dataForm.specVal">
+          </el-input>
+        </el-col>
       </el-form-item>
     </el-form>
     <span slot="footer" class="dialog-footer">
-      <el-button @click="visible = false">取消</el-button>
       <el-button type="primary" @click="dataFormSubmit()">确定</el-button>
+      <el-button @click="visible = false">取消</el-button>
     </span>
   </el-dialog>
 </template>
 
 <script>
   import API from '@/api'
+  import {treeDataTranslate} from '@/utils'
+
+  var spec = function () {
+    return {
+      id: 0,
+      name: '',
+      order: '',
+      searchIndex: '',
+      catId1: '',
+      catId2: '',
+      catId3: '',
+      specValType: '',
+      specVal: ''
+    }
+  }
   export default {
     data() {
       return {
         visible: false,
         categoryList: [],
         selectedOptions: [],
+        specValTypes: [
+          {
+            value: 1,
+            label: '商家自填'
+          },
+          {
+            value: 2,
+            label: '商家选择'
+          }
+        ],
         props: {
-          label:"name",
-          value:"id"
+          label: "name",
+          value: "id"
         },
-        dataForm: {
-          id: 0,
-          name: '',
-          order: '',
-          searchIndex: '',
-          catId1: '',
-          catId2: '',
-          catId3: '',
-          specValType: '',
-          specVal: ''
-        },
+        dataForm: new spec(),
         dataRule: {
           name: [
             {required: true, message: '规格名称不能为空', trigger: 'blur'}
@@ -95,43 +126,62 @@
         }
       }
     },
-    components: {
-    },
+    components: {},
     methods: {
-      init(id) {
-        this.categoryList = JSON.parse(sessionStorage.getItem("categoryList"));
-        this.dataForm.id = id || 0;
+      init(row) {
+        this.selectedOptions = new Array();
+        if (!sessionStorage.getItem("categoryList")) {
+          API.goodscategory.list().then(({data}) => {
+            if (data && data.code === 0) {
+              this.categoryList = treeDataTranslate(data.list, 'id');
+              //保存到sessionStorage，以便后面操作使用
+              sessionStorage.setItem("categoryList", JSON.stringify(this.categoryList));
+            } else {
+            }
+            this.dataListLoading = false
+          });
+        } else {
+          this.categoryList = JSON.parse(sessionStorage.getItem("categoryList"));
+        }
+        this.dataForm = new spec();
+        this.dataForm.id = row ? row.id : 0;
         this.visible = true;
         this.$nextTick(() => {
-          this.$refs['dataForm'].resetFields()
+          // this.$refs['dataForm'].resetFields()
           if (this.dataForm.id) {
-            API.spec.info(this.dataForm.id).then(({data}) => {
-              if (data && data.code === 0) {
-                this.dataForm.name = data.spec.name
-                this.dataForm.order = data.spec.order
-                this.dataForm.searchIndex = data.spec.searchIndex
-                this.dataForm.catId1 = data.spec.catId1
-                this.dataForm.catId2 = data.spec.catId2
-                this.dataForm.catId3 = data.spec.catId3
-                this.dataForm.specValType = data.spec.specValType
-                this.dataForm.specVal = data.spec.specVal
-              }
-            })
+            this.dataForm = row;
+            this.dataForm.searchIndex = row.searchIndex == 1 ? true : false;
+
+            if(this.dataForm.catId1){
+              this.selectedOptions.push(this.dataForm.catId1);
+            }
+            if(this.dataForm.catId2){
+              this.selectedOptions.push(this.dataForm.catId2);
+            }
+            if(this.dataForm.catId3){
+              this.selectedOptions.push(this.dataForm.catId3);
+            }
+
           }
         })
       },
       // 表单提交
       dataFormSubmit() {
+
+        //禁用enter键的时候自动提交表单
+        if (event.keyCode == 13) {
+          return;
+        }
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
             var params = {
               'id': this.dataForm.id || undefined,
               'name': this.dataForm.name,
               'order': this.dataForm.order,
-              'searchIndex': this.dataForm.searchIndex,
-              'catId1': this.dataForm.catId1,
-              'catId2': this.dataForm.catId2,
-              'catId3': this.dataForm.catId3,
+              'searchIndex': this.dataForm.searchIndex == true ? 1 : 0,
+              'catId1': this.selectedOptions[0],
+              'catId2': this.selectedOptions[1],
+              'catId3': this.selectedOptions[2],
               'specValType': this.dataForm.specValType,
               'specVal': this.dataForm.specVal
             }

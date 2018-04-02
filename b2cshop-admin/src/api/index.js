@@ -9,6 +9,7 @@ import * as schedule from './modules/schedule'
 import * as goods from './modules/shop/goods/goods'
 import * as goodscategory from './modules/shop/goods/goodscategory'
 import * as goodsattribute from './modules/shop/goods/goodsattribute'
+import * as goodstype from './modules/shop/goods/goodstype'
 import * as spec from './modules/shop/goods/spec'
 
 export default {
@@ -23,5 +24,6 @@ export default {
   goods,    // 商品
   goodscategory,    // 商品分类
   goodsattribute,    // 商品属性
+  goodstype,    // 商品模型
   spec    // 商品规格
 }

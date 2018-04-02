@@ -41,6 +41,7 @@ export default new Router({
             { path: '/n/shop/goods/goods', component: _import('shop/goods/goods/index'), name: 'goods', desc: '商品' },
             { path: '/n/shop/goods/goodsattribute', component: _import('shop/goods/goodsattribute/index'), name: 'goodsattribute', desc: '商品属性' },
             { path: '/n/shop/goods/goodscategory', component: _import('shop/goods/goodscategory/index'), name: 'goodscategory', desc: '商品分类' },
+            { path: '/n/shop/goods/goodstype', component: _import('shop/goods/goodstype/index'), name: 'goodstype', desc: '商品模型' },
             { path: '/n/shop/goods/goodscoupon', component: _import('shop/goods/goodscoupon/index'), name: 'goodscoupon', desc: '商品优惠券' },
             { path: '/n/shop/goods/spec', component: _import('shop/goods/spec/index'), name: 'spec', desc: '商品规格' }
           ]
